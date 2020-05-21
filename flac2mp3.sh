@@ -41,7 +41,7 @@ switchhelp="true"
 # variables are read from init.txt
 pathflacsource=$(echo $(grep -m 1 "pathflacsource=" $pathinit) | awk -F'=' '{print $2}')
 pathmp3dest=$(echo $(grep -m 1 "pathmp3dest=" $pathinit) | awk -F'=' '{print $2}')
-pathbase="$pathsource/config/base.txt"
+pathbase="$pathsource/db/base.txt"
 pathlog="$pathsource/log"
 filelog="$pathlog/flac2mp3.txt"
 pathtmp="$pathsource/tmp"
@@ -86,7 +86,7 @@ checkprereq()
 			echo "creating folder : $pathlog"
 			mkdir "$pathlog"	
 		fi
-		createfolder "$pathsource/config"
+		createfolder "$pathsource/db"
 		createfolder "$pathtmp"
 		createfolder "$pathtmpdata"
 
@@ -624,7 +624,7 @@ fileprocessing()
 		el=$(echo $(grep -m 1 "pathexclus-$i=" $pathinit) | awk -F'=' '{print $2}')
 		if [ -n "$el" ]; then
 			writelog "exclusion : $el"
-			grep -Ev "^$el" "$pathtmp/diff.txt" > "$pathtmp/diff-2.txt"
+			grep -aEv "^$el" "$pathtmp/diff.txt" > "$pathtmp/diff-2.txt"
 			cat "$pathtmp/diff-2.txt" > "$pathtmp/diff.txt"
 		fi
 	done
