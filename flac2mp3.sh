@@ -607,10 +607,10 @@ fileprocessing()
 		writelog "database copy"
 		cp -f "$pathbase" "$pathtmp/tmpbase.txt"
 		writelog "empty lines removal"
-		grep . "$pathtmp/tmpbase.txt" > "$pathtmp/tmpbase-2.txt"
+		grep -a . "$pathtmp/tmpbase.txt" > "$pathtmp/tmpbase-2.txt"
 
 		writelog "differencies spotting"
-		grep -Fvf "$pathtmp/tmpbase-2.txt" "$pathtmp/listlocalflac-2.txt" > "$pathtmp/diff.txt"
+		grep -aFvf "$pathtmp/tmpbase-2.txt" "$pathtmp/listlocalflac-2.txt" > "$pathtmp/diff.txt"
 	else
 		writelog "no database found, every file is processed"
 		cp "$pathtmp/listlocalflac-2.txt" "$pathtmp/diff.txt"
