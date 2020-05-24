@@ -6,6 +6,7 @@
 # This script converts flac to mp3
 #
 # Version 1.0 "Does the job"
+# Version 1.1 "tag cleanup / echo cleanup"
 #
 # Prerequisites: 
 # metaflac (flac)
@@ -39,23 +40,23 @@ switchhelp="true"
 
 # variables
 # variables are read from init.txt
-pathflacsource=$(echo $(grep -m 1 "pathflacsource=" $pathinit) | awk -F'=' '{print $2}')
-pathmp3dest=$(echo $(grep -m 1 "pathmp3dest=" $pathinit) | awk -F'=' '{print $2}')
+pathflacsource=$(grep -m 1 "pathflacsource=" $pathinit | awk -F'=' '{print $2}')
+pathmp3dest=$(grep -m 1 "pathmp3dest=" $pathinit | awk -F'=' '{print $2}')
 pathbase="$pathsource/db/base.txt"
 pathlog="$pathsource/log"
 filelog="$pathlog/flac2mp3.txt"
 pathtmp="$pathsource/tmp"
 pathtmpdata="$pathsource/tmp/data"
-filethumbnail=$(echo $(grep -m 1 "filethumbnail=" $pathinit) | awk -F'=' '{print $2}') ; if [ -z "$filethumbnail" ] ; then filethumbnail="Folder.jpg" ; fi
-coverlist="tmp-front.jpg;$(echo $(grep -m 1 "coverlist=" $pathinit) | awk -F'=' '{print $2}')"
-coverfolderlist=$(echo $(grep -m 1 "coverfolderlist=" $pathinit) | awk -F'=' '{print $2}')
-varmp3quality=$(echo $(grep -m 1 "mp3quality=" $pathinit) | awk -F'=' '{print $2}'); if [ -z "$varmp3quality" ] ; then varmp3quality=0 ; fi
-valcpulimit=$(echo $(grep -m 1 "valcpulimit=" $pathinit) | awk -F'=' '{print $2}'); if [ -z "$valcpulimit" ] ; then valcpulimit=50 ; fi
-picturesize=$(echo $(grep -m 1 "picturesize=" $pathinit) | awk -F'=' '{print $2}'); if [ -z "$picturesize" ] ; then picturesize=200 ; fi
-waittime=$(echo $(grep -m 1 "waittime=" $pathinit) | awk -F'=' '{print $2}'); if [ -z "$waittime" ] ; then waittime=5 ; fi
+filethumbnail=$(grep -m 1 "filethumbnail=" $pathinit | awk -F'=' '{print $2}') ; if [ -z "$filethumbnail" ] ; then filethumbnail="Folder.jpg" ; fi
+coverlist="tmp-front.jpg;$(grep -m 1 "coverlist=" $pathinit | awk -F'=' '{print $2}')"
+coverfolderlist=$(grep -m 1 "coverfolderlist=" $pathinit | awk -F'=' '{print $2}')
+varmp3quality=$(grep -m 1 "mp3quality=" $pathinit | awk -F'=' '{print $2}'); if [ -z "$varmp3quality" ] ; then varmp3quality=0 ; fi
+valcpulimit=$(grep -m 1 "valcpulimit=" $pathinit | awk -F'=' '{print $2}'); if [ -z "$valcpulimit" ] ; then valcpulimit=50 ; fi
+picturesize=$(grep -m 1 "picturesize=" $pathinit | awk -F'=' '{print $2}'); if [ -z "$picturesize" ] ; then picturesize=200 ; fi
+waittime=$(grep -m 1 "waittime=" $pathinit | awk -F'=' '{print $2}'); if [ -z "$waittime" ] ; then waittime=5 ; fi
 #ffmpeg/avconv fork
-converter=$(echo $(grep -m 1 "converter=" $pathinit) | awk -F'=' '{print $2}'); if [ -z "$converter" ] ; then converter="ffmpeg" ; fi
-varvolume=$(echo $(grep -m 1 "volume=" $pathinit) | awk -F'=' '{print $2}') ; if [ -z "$varvolume" ] ; then varvolume=0 ; fi
+converter=$(grep -m 1 "converter=" $pathinit | awk -F'=' '{print $2}'); if [ -z "$converter" ] ; then converter="ffmpeg" ; fi
+varvolume=$(grep -m 1 "volume=" $pathinit | awk -F'=' '{print $2}') ; if [ -z "$varvolume" ] ; then varvolume=0 ; fi
 # note : pathexclus-X is read later in the script
 # note : smbpattern-X is read later in the script
 
@@ -154,8 +155,8 @@ smbcompatibility(){
 		writelog "smb compatibility conversion input : $fs"
 		for i in {1..6} ; do
 			
-			local tmpsmbpattern=$(echo $(grep -m 1 "smbpattern-$i=" $pathinit) | awk -F'=' '{print $2}')
-			local tmpsmbreplace=$(echo $(grep -m 1 "smbreplace-$i=" $pathinit) | awk -F'=' '{print $2}')
+			local tmpsmbpattern=$(grep -m 1 "smbpattern-$i=" $pathinit | awk -F'=' '{print $2}')
+			local tmpsmbreplace=$(grep -m 1 "smbreplace-$i=" $pathinit | awk -F'=' '{print $2}')
 			if [ -n "$tmpsmbpattern" ] && [ -n "$tmpsmbreplace" ] ; then
 				tmpsmbpattern="[$tmpsmbpattern]"
 				tmpbasename="${tmpbasename//$tmpsmbpattern/$tmpsmbreplace}"
@@ -336,7 +337,7 @@ getpicture(){
 # $1 tag to get
 getmp3tag(){
 	if [ -f "$pathtmpdata/tmptrack3.txt" ]; then
-		local retval=$(echo $(grep -i -m 1 "$1" "$pathtmpdata/tmptrack3.txt") | awk -F'=' '{print $2}')
+		local retval=$(grep -i -m 1 "^$1" "$pathtmpdata/tmptrack3.txt" | awk -F'=' '{print $2}')
 	fi
 	echo $retval
 }
@@ -377,41 +378,44 @@ extracttags(){
 			metaflac --export-tags-to="$pathtmpdata/tmptrack1.txt" "$1"
 		fi
 		
-		local tagyear=$(echo $(grep -i -m 1 "year" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')
-		if [ -z "$tagyear" ]; then tagyear=$(echo $(echo $(grep -i -m 1 "date" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}') | awk -F' ' '{print $1}') ; fi	
+		local tagyear=$(grep -i -m 1 "^year" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')
+		if [ -z "$tagyear" ]; then tagyear=$(echo $(echo $(grep -i -m 1 "^date" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}') | awk -F' ' '{print $1}') ; fi	
 				
-		local tagtitle=$(echo $(grep -i -m 1 "title" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')
-		local tagartist=$(echo $(grep -i -m 1 "artist" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')
-		local tagalbumartist=$(echo $(grep -i -m 1 "ALBUMARTIST" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')
-		local tagalbum=$(echo $(grep -i -m 1 "album" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')
-		local tagdate=$(echo $(grep -i -m 1 "date" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')	
-		local tagtrack=$(echo $(grep -i -m 1 "TRACKNUMBER" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')	
-		local tagtracktot=$(echo $(grep -i -m 1 "TRACKTOTAL" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')	
-		local tagdisc=$(echo $(grep -i -m 1 "DISCNUMBER" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')	
-		local tagdisctot=$(echo $(grep -i -m 1 "DISCTOTAL" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')
-		local taggenre=$(echo $(grep -i -m 1 "Genre" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')
-		local tagpub=$(echo $(grep -i -m 1 "Label" "$pathtmpdata/tmptrack1.txt") | awk -F'=' '{print $2}')
-		
-		local tagComposer=$(echo $(grep -i "Composer" "$pathtmpdata/tmptrack1.txt") | tr '\n' ' ' | sed 's/[Cc]omposer=//g')
-		local tagTIT1=$(echo $(grep -i "Style" "$pathtmpdata/tmptrack1.txt") | tr '\n' ' ' | sed 's/[Ss]tyle=//g')
+		local tagtitle=$(grep -i -m 1 "^title" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')
+		local tagartist=$(grep -i -m 1 "^artist" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')
+		local tagalbumartist=$(grep -i -m 1 "^ALBUMARTIST" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')
+		local tagalbum=$(grep -i -m 1 "^album" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')
+		local tagdate=$(grep -i -m 1 "^date" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')	
+		local tagtrack=$(grep -i -m 1 "^TRACKNUMBER" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')	
+		local tagtracktot=$(grep -i -m 1 "^TRACKTOTAL" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')	
+		local tagdisc=$(grep -i -m 1 "^DISCNUMBER" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')	
+		local tagdisctot=$(grep -i -m 1 "^DISCTOTAL" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')
+		local taggenre=$(grep -i -m 1 "^Genre" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')
+		local tagpub=$(grep -i -m 1 "^Label" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')
+		local tagreleasedate=$(grep -i -m 1 "^RELEASE DATE" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}')
+
+		#sometime multiline
+		#note : ffmpeg 2.7.1 : single line with ; delimiter
+		local tagComposer=$(grep -i "^Composer" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}' | tr '\n' ';' | sed 's/.$//')
+		local tagTIT1=$(grep -i "^Style" "$pathtmpdata/tmptrack1.txt" | awk -F'=' '{print $2}' | tr '\n' ';' | sed 's/.$//')
 
 		
 		echo ";FFMETADATA1" > "$pathtmpdata/tmptrack3.txt"
-		echo "TIT1=$tagTIT1" >> "$pathtmpdata/tmptrack3.txt"
-		echo "title=$tagtitle" >> "$pathtmpdata/tmptrack3.txt"
-		echo "album=$tagalbum" >> "$pathtmpdata/tmptrack3.txt"
-		echo "Year=$tagyear" >> "$pathtmpdata/tmptrack3.txt"
-		echo "TPUB=$tagpub" >> "$pathtmpdata/tmptrack3.txt" 
-		echo "TMED=$tagTMED" >> "$pathtmpdata/tmptrack3.txt"
-		echo "genre=$taggenre" >> "$pathtmpdata/tmptrack3.txt"
-		echo "track=$tagtrack" >> "$pathtmpdata/tmptrack3.txt"
-		echo "disc=$tagdisc" >> "$pathtmpdata/tmptrack3.txt"
-		echo "artist=$tagartist" >> "$pathtmpdata/tmptrack3.txt"
-		echo "album_artist=$tagalbumartist" >> "$pathtmpdata/tmptrack3.txt"
-		echo "composer=$tagComposer" >> "$pathtmpdata/tmptrack3.txt"
-		echo "DISCTOTAL=$tagdisctot" >> "$pathtmpdata/tmptrack3.txt"
-		echo "Release date=$tagdate" >> "$pathtmpdata/tmptrack3.txt"
-		echo "TRACKTOTAL=$tagtracktot" >> "$pathtmpdata/tmptrack3.txt"
+		if [ -n "$tagTIT1" ]; then echo "TIT1=$tagTIT1" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagtitle" ]; then echo "title=$tagtitle" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagalbum" ]; then echo "album=$tagalbum" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagyear" ]; then echo "Year=$tagyear" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagpub" ]; then echo "TPUB=$tagpub" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagTMED" ]; then echo "TMED=$tagTMED" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$taggenre" ]; then echo "genre=$taggenre" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagtrack" ]; then echo "track=$tagtrack" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagdisc" ]; then echo "disc=$tagdisc" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagartist" ]; then echo "artist=$tagartist" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagalbumartist" ]; then echo "album_artist=$tagalbumartist" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagComposer" ]; then echo "composer=$tagComposer" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagdisctot" ]; then echo "DISCTOTAL=$tagdisctot" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagreleasedate" ]; then echo "Release date=$tagreleasedate" >> "$pathtmpdata/tmptrack3.txt" ; fi
+		if [ -n "$tagtracktot" ]; then echo "TRACKTOTAL=$tagtracktot" >> "$pathtmpdata/tmptrack3.txt" ; fi
 	
 }
 
